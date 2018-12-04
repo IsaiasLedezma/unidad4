@@ -27,7 +27,14 @@ Logger.getLogger("org").setLevel(Level.ERROR)//Quita muchos warnings
 val df = spark.read.option("inferSchema","true").csv("/FileStore/tables/Iris.csv").toDF("_c0","_c1","_c2","_c3","_c4")
 df.show()
 
+val newdf = df.withColumn("label", when(col("_c4") === "Iris-setosa",1.0).otherwise(when(col("_c4") === "Iris-versicolor", 2.0).otherwise(3.0)))
+newdf.show()
+val ensamblador = new VectorAssembler().setInputCols(Array("_c0", "_c1", "_c2", "_c3")).setOutputCol("features")
+val transformado = ensamblador.transform(newdf)
+transformado.show()
+val kmeans = new KMeans().setK(10).setSeed(1L)
 
+val model = kmeans.fit(transformado)
 // Make predictions
 val predictions = model.transform(transformado)
 
